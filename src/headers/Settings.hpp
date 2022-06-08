@@ -4,13 +4,8 @@
 #include <fstream> //ifstream
 #include <iostream> //cout
 
-#include <regex> //for parsing automation stringRule
-#include <string>
-
-#include <stdexcept> //runtome_error
-
-
-#include "json.hpp" //for parsing json file
+#include "StringRule.hpp" // parsing the string rule
+#include "json.hpp" // parsing json file
 using json = nlohmann::json;
 
 
@@ -37,7 +32,7 @@ class Settings
 
         int millisecondsToWaitForEachGeneration;
 
-        string stringRule;
+        StringRule stringRule;
 
     public:
 
@@ -57,7 +52,7 @@ class Settings
         rgb getDeadCellColor() const {return this->deadCellColor;}
         int getMillisecodsToWaitForEachGeneration() const {return this->millisecondsToWaitForEachGeneration;}
 
-        string getStringRule() const {return this->stringRule;}
+        StringRule getStringRule() const {return this->stringRule;}
         // ----------------------------------------------------------------------------------------------
 
         //Utilities
@@ -100,20 +95,24 @@ Settings::Settings()
 
     millisecondsToWaitForEachGeneration = checkPositive(jsonSettings["Settings"]["millisecondsToWaitForEachGeneration"]);
 
+    string s = jsonSettings["Settings"]["stringRule"];
+    cout << s << endl;
+    stringRule = StringRule(s);
+
 }
 
 inline int Settings::checkRGBValue(int value) const
 {
     if (value >= 0 && value <= 255) { return value; }
 
-    throw runtime_error("ERROR: RGB values must be 0 <= value <= 255");
+    throw range_error("ERROR: RGB values must be 0 <= value <= 255");
 }
 
 inline int Settings::checkPositive(int value) const
 {
     if (value >= 0) return value;
 
-    throw runtime_error("ERROR: Passed a negative value, positive expected.");
+    throw range_error("ERROR: Passed a negative value, positive expected.");
 }
 
 #endif
