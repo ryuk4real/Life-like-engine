@@ -73,30 +73,29 @@ Settings::Settings()
     //----------------------------------------------------------------------------------------------------
 
 
-    numberOfGenerations = checkPositive(jsonSettings["Settings"]["numberOfGenerations"]);
+    numberOfGenerations = checkPositive(jsonSettings["numberOfGenerations"]);
 
-    generationTextColor.r = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][0]);
-    generationTextColor.g = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][1]);
-    generationTextColor.b = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][2]);
+    generationTextColor.r = checkRGBValue(jsonSettings["generationTextColor"][0]);
+    generationTextColor.g = checkRGBValue(jsonSettings["generationTextColor"][1]);
+    generationTextColor.b = checkRGBValue(jsonSettings["generationTextColor"][2]);
 
-    generationTypefaceSize = checkPositive(jsonSettings["Settings"]["generationTypefaceSize"]);
+    generationTypefaceSize = checkPositive(jsonSettings["generationTypefaceSize"]);
 
-    displaySize = checkPositive(jsonSettings["Settings"]["displaySize"]);
+    displaySize = checkPositive(jsonSettings["displaySize"]);
 
-    matrixSize = checkPositive(jsonSettings["Settings"]["matrixSize"]);
+    matrixSize = checkPositive(jsonSettings["matrixSize"]);
 
-    aliveCellColor.r = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][0]);
-    aliveCellColor.g = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][1]);
-    aliveCellColor.b = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][2]);
+    aliveCellColor.r = checkRGBValue(jsonSettings["aliveCellColor"][0]);
+    aliveCellColor.g = checkRGBValue(jsonSettings["aliveCellColor"][1]);
+    aliveCellColor.b = checkRGBValue(jsonSettings["aliveCellColor"][2]);
 
-    deadCellColor.r = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][0]);
-    deadCellColor.g = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][1]);
-    deadCellColor.b = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][2]);
+    deadCellColor.r = checkRGBValue(jsonSettings["deadCellColor"][0]);
+    deadCellColor.g = checkRGBValue(jsonSettings["deadCellColor"][1]);
+    deadCellColor.b = checkRGBValue(jsonSettings["deadCellColor"][2]);
 
-    millisecondsToWaitForEachGeneration = checkPositive(jsonSettings["Settings"]["millisecondsToWaitForEachGeneration"]);
+    millisecondsToWaitForEachGeneration = checkPositive(jsonSettings["millisecondsToWaitForEachGeneration"]);
 
-    string s = jsonSettings["Settings"]["stringRule"];
-    cout << s << endl;
+    string s = jsonSettings["stringRule"];
     stringRule = StringRule(s);
 
 }

@@ -1,14 +1,11 @@
 {
-    "Settings" :
-    {
-        "numberOfGenerations": 10000,
-        "generationTextColor": [255,0,0],
-        "generationTypefaceSize": 36,
-        "displaySize": 500,
-        "matrixSize": 100,
-        "aliveCellColor": [0,0,0],
-        "deadCellColor": [255,255,255],
-        "millisecondsToWaitForEachGeneration": 100,
-        "stringRule": "B23/S3"
-    }
+    "numberOfGenerations": 10000,
+    "generationTextColor": [255,0,0],
+    "generationTypefaceSize": 36,
+    "displaySize": 500,
+    "matrixSize": 100,
+    "aliveCellColor": [0,0,0],
+    "deadCellColor": [255,255,255],
+    "millisecondsToWaitForEachGeneration": 100,
+    "stringRule": "B23/S3"
 }
