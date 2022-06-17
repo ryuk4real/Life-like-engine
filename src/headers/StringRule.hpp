@@ -31,16 +31,13 @@ class StringRule
 
 StringRule::StringRule(string &_stringRule)
 {
-
-    regex ruleDetection("^B((?!\\d*?(\\d)\\d*?\2)\\d{0,10})\\/S((?!\\d*?(\\d)\\d*?\4)\\d{0,10})");
+    
+    const regex ruleDetection("^B((?!\\d*?(\\d)\\d*?\\2)\\d{0,10})\\/S((?!\\d*?(\\d)\\d*?\\4)\\d{0,10})");
     smatch matches;
     
     if (regex_search(_stringRule, matches, ruleDetection))
     {
         this->stringRule = _stringRule;
-
-
-
 
 
         this->bornSubset = vector<int>(10, 0);
@@ -62,7 +59,7 @@ StringRule::StringRule(string &_stringRule)
             survivorSubset[survivorSubString[i] - 48] = 1;
         }
 
-        
+
     }
     else throw runtime_error("ERROR: can't parse stringRule in file settings.json");
 }

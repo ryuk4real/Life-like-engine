@@ -23,6 +23,7 @@ class Settings
         int numberOfGenerations;
         rgb generationTextColor;
         int generationTypefaceSize;
+        bool displayGenerationOnScreen;
 
         int displaySize;
         int matrixSize;
@@ -44,6 +45,8 @@ class Settings
         int getNumberOfGenerations() const {return this->numberOfGenerations;}
         rgb getGenerationTextColor() const {return this->generationTextColor;}
         int getGenerationTextTypefaceSize() const {return this->generationTypefaceSize;}
+
+        bool areGenerationsDisplayedOnScreen() const {return this->displayGenerationOnScreen;}
 
         int getDisplaySize() const {return this->displaySize;}
         int getMatrixSize() const {return this->matrixSize;}
@@ -80,6 +83,8 @@ Settings::Settings()
     generationTextColor.b = checkRGBValue(jsonSettings["generationTextColor"][2]);
 
     generationTypefaceSize = checkPositive(jsonSettings["generationTypefaceSize"]);
+
+    displayGenerationOnScreen = checkPositive(jsonSettings["displayGenerationsOnScreen"]);
 
     displaySize = checkPositive(jsonSettings["displaySize"]);
 

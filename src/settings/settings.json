@@ -1,5 +1,6 @@
 {
     "numberOfGenerations": 10000,
+    "displayGenerationsOnScreen": -1,
     "generationTextColor": [255,0,0],
     "generationTypefaceSize": 36,
     "displaySize": 500,

@@ -41,9 +41,17 @@ int main(int args, char **argv)
     al_init_font_addon();
     al_init_ttf_addon();
 
-	ALLEGRO_FONT *fontUbuntuB = al_load_font("fonts/Ubuntu-B.ttf", settings.getGenerationTextTypefaceSize(), 1);
-	rgb textRGB = settings.getGenerationTextColor();
-	ALLEGRO_COLOR generationTextColor = al_map_rgb(textRGB.r, textRGB.g, textRGB.b);
+	ALLEGRO_FONT *fontUbuntuB;
+	rgb textRGB;
+	ALLEGRO_COLOR generationTextColor;
+
+	if (settings.areGenerationsDisplayedOnScreen())
+	{
+		fontUbuntuB = al_load_font("fonts/Ubuntu-B.ttf", settings.getGenerationTextTypefaceSize(), 1);
+		textRGB = settings.getGenerationTextColor();
+		generationTextColor = al_map_rgb(textRGB.r, textRGB.g, textRGB.b);
+	}
+
 
 	
 	rgb deadCellColorRGB = settings.getDeadCellColor();
@@ -67,9 +75,12 @@ int main(int args, char **argv)
 	for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
 	{
 
-		// Print the number of generations on screen	
-		std::string generation = std::to_string(i);
-		al_draw_text(fontUbuntuB, generationTextColor, 10, 10, ALLEGRO_ALIGN_LEFT, generation.c_str());
+		if (settings.areGenerationsDisplayedOnScreen())
+		{
+			// Print the number of generations on screen	
+			std::string generation = std::to_string(i);
+			al_draw_text(fontUbuntuB, generationTextColor, 10, 10, ALLEGRO_ALIGN_LEFT, generation.c_str());
+		}
 
 		al_flip_display();
         al_clear_to_color(deadCellColor);
