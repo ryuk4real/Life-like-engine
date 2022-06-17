@@ -4,13 +4,8 @@
 #include <fstream> //ifstream
 #include <iostream> //cout
 
-#include <regex> //for parsing automation stringRule
-#include <string>
-
-#include <stdexcept> //runtome_error
-
-
-#include "json.hpp" //for parsing json file
+#include "StringRule.hpp" // parsing the string rule
+#include "json.hpp" // parsing json file
 using json = nlohmann::json;
 
 
@@ -28,6 +23,7 @@ class Settings
         int numberOfGenerations;
         rgb generationTextColor;
         int generationTypefaceSize;
+        bool displayGenerationOnScreen;
 
         int displaySize;
         int matrixSize;
@@ -37,7 +33,7 @@ class Settings
 
         int millisecondsToWaitForEachGeneration;
 
-        string stringRule;
+        StringRule stringRule;
 
     public:
 
@@ -50,6 +46,8 @@ class Settings
         rgb getGenerationTextColor() const {return this->generationTextColor;}
         int getGenerationTextTypefaceSize() const {return this->generationTypefaceSize;}
 
+        bool areGenerationsDisplayedOnScreen() const {return this->displayGenerationOnScreen;}
+
         int getDisplaySize() const {return this->displaySize;}
         int getMatrixSize() const {return this->matrixSize;}
 
@@ -57,7 +55,7 @@ class Settings
         rgb getDeadCellColor() const {return this->deadCellColor;}
         int getMillisecodsToWaitForEachGeneration() const {return this->millisecondsToWaitForEachGeneration;}
 
-        string getStringRule() const {return this->stringRule;}
+        StringRule getStringRule() const {return this->stringRule;}
         // ----------------------------------------------------------------------------------------------
 
         //Utilities
@@ -78,27 +76,32 @@ Settings::Settings()
     //----------------------------------------------------------------------------------------------------
 
 
-    numberOfGenerations = checkPositive(jsonSettings["Settings"]["numberOfGenerations"]);
+    numberOfGenerations = checkPositive(jsonSettings["numberOfGenerations"]);
 
-    generationTextColor.r = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][0]);
-    generationTextColor.g = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][1]);
-    generationTextColor.b = checkRGBValue(jsonSettings["Settings"]["generationTextColor"][2]);
+    generationTextColor.r = checkRGBValue(jsonSettings["generationTextColor"][0]);
+    generationTextColor.g = checkRGBValue(jsonSettings["generationTextColor"][1]);
+    generationTextColor.b = checkRGBValue(jsonSettings["generationTextColor"][2]);
 
-    generationTypefaceSize = checkPositive(jsonSettings["Settings"]["generationTypefaceSize"]);
+    generationTypefaceSize = checkPositive(jsonSettings["generationTypefaceSize"]);
 
-    displaySize = checkPositive(jsonSettings["Settings"]["displaySize"]);
+    displayGenerationOnScreen = checkPositive(jsonSettings["displayGenerationsOnScreen"]);
 
-    matrixSize = checkPositive(jsonSettings["Settings"]["matrixSize"]);
+    displaySize = checkPositive(jsonSettings["displaySize"]);
 
-    aliveCellColor.r = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][0]);
-    aliveCellColor.g = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][1]);
-    aliveCellColor.b = checkRGBValue(jsonSettings["Settings"]["aliveCellColor"][2]);
+    matrixSize = checkPositive(jsonSettings["matrixSize"]);
 
-    deadCellColor.r = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][0]);
-    deadCellColor.g = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][1]);
-    deadCellColor.b = checkRGBValue(jsonSettings["Settings"]["deadCellColor"][2]);
+    aliveCellColor.r = checkRGBValue(jsonSettings["aliveCellColor"][0]);
+    aliveCellColor.g = checkRGBValue(jsonSettings["aliveCellColor"][1]);
+    aliveCellColor.b = checkRGBValue(jsonSettings["aliveCellColor"][2]);
 
-    millisecondsToWaitForEachGeneration = checkPositive(jsonSettings["Settings"]["millisecondsToWaitForEachGeneration"]);
+    deadCellColor.r = checkRGBValue(jsonSettings["deadCellColor"][0]);
+    deadCellColor.g = checkRGBValue(jsonSettings["deadCellColor"][1]);
+    deadCellColor.b = checkRGBValue(jsonSettings["deadCellColor"][2]);
+
+    millisecondsToWaitForEachGeneration = checkPositive(jsonSettings["millisecondsToWaitForEachGeneration"]);
+
+    string s = jsonSettings["stringRule"];
+    stringRule = StringRule(s);
 
 }
 
@@ -106,14 +109,14 @@ inline int Settings::checkRGBValue(int value) const
 {
     if (value >= 0 && value <= 255) { return value; }
 
-    throw runtime_error("ERROR: RGB values must be 0 <= value <= 255");
+    throw range_error("ERROR: RGB values must be 0 <= value <= 255");
 }
 
 inline int Settings::checkPositive(int value) const
 {
     if (value >= 0) return value;
 
-    throw runtime_error("ERROR: Passed a negative value, positive expected.");
+    throw range_error("ERROR: Passed a negative value, positive expected.");
 }
 
 #endif
