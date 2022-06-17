@@ -18,7 +18,7 @@ class Settings
 
     private:
 
-        bool areSettingsDefault;
+        bool randomizedFirstGeneration;
 
         int numberOfGenerations;
         rgb generationTextColor;
@@ -37,11 +37,11 @@ class Settings
 
     public:
 
-
-
         Settings();
 
         // Getters -------------------------------------------------------------------------------------
+        bool isFirstGenerationRandomized() const {return this->randomizedFirstGeneration;}
+
         int getNumberOfGenerations() const {return this->numberOfGenerations;}
         rgb getGenerationTextColor() const {return this->generationTextColor;}
         int getGenerationTextTypefaceSize() const {return this->generationTypefaceSize;}
@@ -61,6 +61,7 @@ class Settings
         //Utilities
         inline int checkRGBValue(int value) const;
         inline int checkPositive(int value) const;
+
 };
 
 Settings::Settings()
@@ -75,6 +76,7 @@ Settings::Settings()
     settings >> jsonSettings;
     //----------------------------------------------------------------------------------------------------
 
+    randomizedFirstGeneration = checkPositive(jsonSettings["isFirstGenerationRandom"]);
 
     numberOfGenerations = checkPositive(jsonSettings["numberOfGenerations"]);
 
