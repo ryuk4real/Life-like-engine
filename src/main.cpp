@@ -109,12 +109,13 @@ int main(int args, char **argv)
 	int numberOfCpus;
 	MPI_Comm_size(MPI_COMM_WORLD, &numberOfCpus);
 
-
+    int processId;
+    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
 
 
 	if (numberOfCpus == 1)
 	{
-
+        // Sequential algorithm
 		currentGeneration = new int[rows * columns];
 		newGeneration = new int[rows * columns];
 
