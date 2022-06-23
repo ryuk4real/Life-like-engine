@@ -11,8 +11,8 @@ class StringRule
 {
     private:
 
-        vector<int> bornSubset;
-        vector<int> survivorSubset;
+        vector<bool> bornSubset;
+        vector<bool> survivorSubset;
 
         string stringRule;
 
@@ -23,8 +23,8 @@ class StringRule
 
         string getString() const {return stringRule;}
 
-        int getNeighbourFromBornSubsetAt(int &position) const;
-        int getNeighbourFromSurvivorSubsetAt(int &position) const;
+        bool getNeighbourFromBornSubsetAt(int &position) const;
+        bool getNeighbourFromSurvivorSubsetAt(int &position) const;
 
 };
 
@@ -40,7 +40,7 @@ StringRule::StringRule(string &_stringRule)
         this->stringRule = _stringRule;
 
 
-        this->bornSubset = vector<int>(9, 0);
+        this->bornSubset = vector<bool>(9, 0);
         string bornSubString = matches.str(1);
 
         for (int i = 0; i < bornSubString.size(); ++i)
@@ -49,7 +49,7 @@ StringRule::StringRule(string &_stringRule)
         }
 
 
-        this->survivorSubset = vector<int>(9, 0);
+        this->survivorSubset = vector<bool>(9, 0);
         string survivorSubString = matches.str(3);
 
         for (int i = 0; i < survivorSubString.size(); ++i)
@@ -63,12 +63,12 @@ StringRule::StringRule(string &_stringRule)
     else throw runtime_error("ERROR: can't parse stringRule in file settings.json");
 }
 
-int StringRule::getNeighbourFromBornSubsetAt(int &position) const
+bool StringRule::getNeighbourFromBornSubsetAt(int &position) const
 {
     return bornSubset[position];
 }
 
-int StringRule::getNeighbourFromSurvivorSubsetAt(int &position) const
+bool StringRule::getNeighbourFromSurvivorSubsetAt(int &position) const
 {
     return survivorSubset[position];
 }
