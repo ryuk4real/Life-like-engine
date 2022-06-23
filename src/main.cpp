@@ -145,11 +145,14 @@ int main(int args, char **argv)
 		}
 		// ---------------------------------------------------------------
 	}
-	else if (numberOfCpus % 2 == 0)
+	else if (numberOfCpus >= 2 && numberOfCpus % 3)
     {
-        
+        // 1D partitioning (rows)
     }
-	else {}
+    else
+    {
+        // cartesian topology
+    }
 
 
 
