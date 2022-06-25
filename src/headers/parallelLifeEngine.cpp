@@ -17,6 +17,7 @@ using namespace std;
 
 inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down, int numberOfCpus)
 {
+    MPI_Request request;
 
     MPI_Isend(subCurrentGeneration,
               1,
@@ -24,7 +25,7 @@ inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int
               up,
               99,
               MPI_COMM_WORLD,
-              nullptr);
+              &request);
 
     MPI_Isend(subCurrentGeneration + (settings.getMatrixSize() / numberOfCpus + 2) * settings.getMatrixSize(),
               1,
@@ -32,7 +33,7 @@ inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int
               down,
               99,
               MPI_COMM_WORLD,
-              nullptr);
+              &request);
 }
 
 inline void reciveBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down, int &numberOfCpus)
@@ -117,6 +118,24 @@ inline void calculateNexSubGenerationBorders(int &subRows, int &columns, int * s
     {
         parallelTransictionCell(0, j, subCurrentGeneration, subNextGeneration);
         parallelTransictionCell(subRows, j, subCurrentGeneration, subNextGeneration);
+    }
+}
+
+inline void swapSubGeneration(int * subCurrentGeneration, int * subNextGeneration)
+{
+    int *subCurrentGenerationCopy = subCurrentGeneration;
+    subCurrentGeneration = subNextGeneration;
+    subNextGeneration = subCurrentGenerationCopy;
+}
+
+inline void displayCurrentGeneration(int * generationAfterGather, ALLEGRO_COLOR aliveCellColor)
+{
+    for (int i = 0; i < settings.getMatrixSize(); ++i)
+    {
+        for (int j = 0; j < settings.getMatrixSize(); ++j)
+        {
+            drawCell(i, j, aliveCellColor);
+        }
     }
 }
 
@@ -223,14 +242,22 @@ int parallelLifeEngine(int &numberOfCpus)
             reciveBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
             calculateNexSubGenerationBorders(subRows, columns, subCurrentGeneration, subNextGeneration);
 
+            //save sub gen 0 to after gather
+
             for (int process = 1; process < numberOfCpus; ++process)
                 MPI_Recv(generationAfterGather + ((subRows - 2) * i),
-                         4,
+                         subRows - 2,
                          contiguous,
                          process,
                          66,
                          MPI_COMM_WORLD,
                          nullptr);
+
+            swapSubGeneration(subCurrentGeneration, subNextGeneration);
+            
+            #ifdef USE_ALLEGRO_GRAPHICS
+            displayCurrentGeneration(generationAfterGather, aliveCellColor);
+            #endif
             
         }
 
@@ -249,7 +276,24 @@ int parallelLifeEngine(int &numberOfCpus)
     }
     else
     {
+        for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
+        {
+            sendBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
+            calculateNextSubInnerGeneration(subRows, columns, subCurrentGeneration, subNextGeneration);
+            reciveBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
+            calculateNexSubGenerationBorders(subRows, columns, subCurrentGeneration, subNextGeneration);
 
+            MPI_Send(subCurrentGeneration + columns,
+                      subRows - 2,
+                      contiguous,
+                      0,
+                      66,
+                      MPI_COMM_WORLD);
+            
+            MPI_Barrier(MPI_COMM_WORLD);
+            swapSubGeneration(subCurrentGeneration, subNextGeneration);
+            
+        }
     }
     
 
