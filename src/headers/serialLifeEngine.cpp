@@ -1,23 +1,13 @@
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_font.h>
-#include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_ttf.h>
+#ifndef SERIAL_LIFE_ENGINE
+#define SERIAL_LIFE_ENGINE
 
-#include <mpi.h>
-
-#include <random>
-#include <thread> //sleep_for
-#include <chrono> //milliseconds
-
-#include "Settings.hpp"
+#include "utils.cpp"
 
 #define USE_ALLEGRO_GRAPHICS
 #define ALIVE   1
 #define DEAD    0
 
 using namespace std;
-
-Settings settings;
 
 int rows = settings.getMatrixSize();
 int columns = settings.getMatrixSize();
@@ -30,35 +20,6 @@ int *newGeneration;
 ALLEGRO_COLOR deadCellColor;
 ALLEGRO_COLOR aliveCellColor;
 
-inline int m(int i, int j)
-{
-    return ((i * columns) + j);
-}
-
-void initializeRandomizedFirstGeneration(int _rows, int _columns)
-{
-    unsigned int seed = time(nullptr);
-
-    for (int i = 0; i < _rows; ++i)
-    {
-        for (int j = 0; j < _columns; ++j)
-        {
-            currentGeneration[m(i, j)] = rand_r(&seed) % 2;
-            newGeneration[m(i, j)] = 0;
-        }
-    }
-}
-
-
-void drawCell(int i, int j, ALLEGRO_COLOR cellColor)
-{
-    al_draw_filled_rectangle(i * squareHeight,
-                             j * squareHeight,
-                             i * squareHeight + squareHeight,
-                             j * squareHeight + squareHeight,
-                             cellColor);
-}
-
 
 void swapLastGeneration()
 {
@@ -68,7 +29,7 @@ void swapLastGeneration()
 }
 
 
-inline void transictionCell(int i, int j)
+inline void serialTransictionCell(int i, int j)
 {
 
     int neighbours = 0;
@@ -108,7 +69,7 @@ inline void transictionCell(int i, int j)
             {
                 newGeneration[m(i, j)] = ALIVE;
 
-#               ifdef USE_ALLEGRO_GRAPHICS
+                #ifdef USE_ALLEGRO_GRAPHICS
                 drawCell(i, j, aliveCellColor);
                 #endif
             }
@@ -127,8 +88,7 @@ void generateNextGeneration()
     {
         for (int j = 0; j < columns; ++j)
         {
-
-            transictionCell(i, j);
+            serialTransictionCell(i, j);
         }
     }
 }
@@ -201,7 +161,9 @@ int serialLifeEngine()
         #endif // USE_ALLEGRO_GRAPHICS
 
         if (settings.isFirstGenerationRandomized())
-            initializeRandomizedFirstGeneration(rows, columns);
+            initializeRandomizedFirstGeneration(rows, columns, currentGeneration);
+        else
+            initializeFirstGenerationForTesting(rows, columns, currentGeneration);
 
         double startTime = MPI_Wtime();
 
@@ -238,3 +200,5 @@ int serialLifeEngine()
 
         return 0;
 }
+
+#endif // SERIAL_LIFE_ENGINE
