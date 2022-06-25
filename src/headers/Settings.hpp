@@ -34,10 +34,10 @@ class Settings
         int millisecondsToWaitForEachGeneration;
 
         StringRule stringRule;
-        Settings();
 
     public:
 
+        Settings();
 
         // Getters -------------------------------------------------------------------------------------
         bool isFirstGenerationRandomized() const {return this->randomizedFirstGeneration;}
