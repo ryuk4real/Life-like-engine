@@ -3,7 +3,7 @@
 
 #include "utils.cpp"
 
-#define USE_ALLEGRO_GRAPHICS
+
 #define ALIVE   1
 #define DEAD    0
 

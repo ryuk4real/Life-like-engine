@@ -31,7 +31,7 @@ int main(int args, char **argv)
     else if (numberOfCpus >= 2)
     {
 
-        errorCode = parallelLifeEngine(numberOfCpus);
+        errorCode = parallelLifeEngine();
 
         MPI_Finalize();
         return errorCode;

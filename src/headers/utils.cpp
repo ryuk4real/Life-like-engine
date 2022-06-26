@@ -8,6 +8,8 @@
 
 #include "Settings.hpp"
 
+//#define USE_ALLEGRO_GRAPHICS
+
 Settings settings;
 
 
@@ -30,8 +32,8 @@ void initializeFirstGenerationForTesting(int &_rows, int &_columns, int * curren
         }
     }
 
-    currentGeneration[m(_rows / 2, _columns / 2)] = 1;
-    currentGeneration[m(_rows / 2 + 1, _columns / 2 + 1)] = 1;
+    //currentGeneration[m(_rows / 2, _columns / 2)] = 1;
+    //currentGeneration[m(_rows / 2 + 1, _columns / 2 + 1)] = 1;
 
 
 }

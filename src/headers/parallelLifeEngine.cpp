@@ -5,54 +5,30 @@
 #include "utils.cpp"
 
 
-#define USE_ALLEGRO_GRAPHICS
-
 
 #define ALIVE   1
 #define DEAD    0
 
+MPI_Request request;
+MPI_Status status;
+
 
 using namespace std;
 
+int processId;
+int numberOfCpus;
 
-inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down, int numberOfCpus)
+
+inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down)
 {
-    MPI_Request request;
-
-    MPI_Isend(subCurrentGeneration,
-              1,
-              contiguous,
-              up,
-              99,
-              MPI_COMM_WORLD,
-              &request);
-
-    MPI_Isend(subCurrentGeneration + (settings.getMatrixSize() / numberOfCpus + 2) * settings.getMatrixSize(),
-              1,
-              contiguous,
-              down,
-              99,
-              MPI_COMM_WORLD,
-              &request);
+    MPI_Isend(subCurrentGeneration + settings.getMatrixSize(), 1, contiguous, up, 88, MPI_COMM_WORLD, &request);
+    MPI_Isend(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus), 1, contiguous, down, 99, MPI_COMM_WORLD, &request);
 }
 
-inline void reciveBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down, int &numberOfCpus)
+inline void reciveBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down)
 {
-    MPI_Recv(subCurrentGeneration,
-             1,
-             contiguous,
-             up,
-             99,
-             MPI_COMM_WORLD,
-             nullptr);
-    
-    MPI_Recv(subCurrentGeneration + (settings.getMatrixSize() / numberOfCpus + 2) * settings.getMatrixSize(),
-             1,
-             contiguous,
-             up,
-             99,
-             MPI_COMM_WORLD,
-             nullptr);
+    MPI_Recv(subCurrentGeneration, 1, contiguous, up, 99, MPI_COMM_WORLD, &status);
+    MPI_Recv(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus + 1), 1, contiguous, down, 88, MPI_COMM_WORLD, &status);
 }
 
 inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, int * subNextGeneration)
@@ -103,7 +79,7 @@ inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, in
 
 void calculateNextSubInnerGeneration(int &subRows, int &columns, int * subCurrentGeneration, int * subNextGeneration)
 {
-    for (int i = 1; i < subRows - 1; ++i)
+    for (int i = 2; i < subRows - 1; ++i)
     {
         for (int j = 0; j < columns; ++j)
         {
@@ -116,10 +92,11 @@ inline void calculateNexSubGenerationBorders(int &subRows, int &columns, int * s
 {
     for (int j = 0; j < columns; ++j)
     {
-        parallelTransictionCell(0, j, subCurrentGeneration, subNextGeneration);
-        parallelTransictionCell(subRows, j, subCurrentGeneration, subNextGeneration);
+        parallelTransictionCell(1, j, subCurrentGeneration, subNextGeneration);
+        parallelTransictionCell(subRows-1, j, subCurrentGeneration, subNextGeneration);
     }
 }
+
 
 inline void swapSubGeneration(int * subCurrentGeneration, int * subNextGeneration)
 {
@@ -127,6 +104,7 @@ inline void swapSubGeneration(int * subCurrentGeneration, int * subNextGeneratio
     subCurrentGeneration = subNextGeneration;
     subNextGeneration = subCurrentGenerationCopy;
 }
+
 
 inline void displayCurrentGeneration(int * generationAfterGather, ALLEGRO_COLOR aliveCellColor)
 {
@@ -139,14 +117,32 @@ inline void displayCurrentGeneration(int * generationAfterGather, ALLEGRO_COLOR 
     }
 }
 
+void printm(int * mat, int proccessId, int rows, int cols)
+{
+    printf("Process %d\n", proccessId);
+
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < columns; ++j)
+        {
+            printf("%d", mat[m(i,j)]);
+        }
+
+        printf("\n");
+    }
+
+    printf("\n\n");
+}
 
 
-int parallelLifeEngine(int &numberOfCpus)
+
+int parallelLifeEngine()
 {
     // USING 1D TOPOLOGY
 
-    int processId;
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+    MPI_Comm_size(MPI_COMM_WORLD, &numberOfCpus);
+
 
     int subRows = ((settings.getMatrixSize() / numberOfCpus) + 2);
     int columns = settings.getMatrixSize();
@@ -182,6 +178,12 @@ int parallelLifeEngine(int &numberOfCpus)
 
     if (processId == 0)
     {
+        for (int j = 0; j < settings.getMatrixSize(); ++j)
+        {
+            subCurrentGeneration[m(1, j)] = 4;
+            subCurrentGeneration[m(subRows - 2, j)] = 5;
+        }
+
         #ifdef USE_ALLEGRO_GRAPHICS
         // ALLEGRO -------------------------------------------------------
         // Initialize allegro
@@ -230,35 +232,39 @@ int parallelLifeEngine(int &numberOfCpus)
 
 
         int * generationAfterGather = new int[rows * columns];
+        initializeFirstGenerationForTesting(rows, columns, generationAfterGather);
 
 
         double startTime = MPI_Wtime();
 
+        for (int i = 0; i < columns; ++i)
+        {
+            subCurrentGeneration[m(0,i)] = i;
+        }
 
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
         {
-            sendBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
-            calculateNextSubInnerGeneration(subRows, columns, subCurrentGeneration, subNextGeneration);
-            reciveBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
-            calculateNexSubGenerationBorders(subRows, columns, subCurrentGeneration, subNextGeneration);
+            sendBorders(subCurrentGeneration, contiguous, up, down);
+            reciveBorders(subCurrentGeneration, contiguous, up, down);
+            printm(subCurrentGeneration, processId, subRows, columns);
 
-            //save sub gen 0 to after gather
+            //gather all pieces
 
-            for (int process = 1; process < numberOfCpus; ++process)
-                MPI_Recv(generationAfterGather + ((subRows - 2) * i),
-                         subRows - 2,
-                         contiguous,
-                         process,
-                         66,
-                         MPI_COMM_WORLD,
-                         nullptr);
-
-            swapSubGeneration(subCurrentGeneration, subNextGeneration);
-            
             #ifdef USE_ALLEGRO_GRAPHICS
             displayCurrentGeneration(generationAfterGather, aliveCellColor);
-            #endif
             
+            if (settings.areGenerationsDisplayedOnScreen())
+                displayGenerationText(fontUbuntuB, generationTextColor, i);
+
+            al_flip_display();
+            al_clear_to_color(deadCellColor);
+            #endif // USE_ALLEGRO_GRAPHICS
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(settings.getMillisecodsToWaitForEachGeneration()));
+
+            printm(generationAfterGather, processId, rows, columns);
+
+            printf("--%d--\n", i);
         }
 
 
@@ -274,31 +280,24 @@ int parallelLifeEngine(int &numberOfCpus)
         #endif
     
     }
-    else
+
+    if (processId != 0)
     {
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
         {
-            sendBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
-            calculateNextSubInnerGeneration(subRows, columns, subCurrentGeneration, subNextGeneration);
-            reciveBorders(subCurrentGeneration, contiguous, up, down, numberOfCpus);
-            calculateNexSubGenerationBorders(subRows, columns, subCurrentGeneration, subNextGeneration);
+            sendBorders(subCurrentGeneration, contiguous, up, down);
+            reciveBorders(subCurrentGeneration, contiguous, up, down);
+            printm(subCurrentGeneration, processId, subRows, columns);
 
-            MPI_Send(subCurrentGeneration + columns,
-                      subRows - 2,
-                      contiguous,
-                      0,
-                      66,
-                      MPI_COMM_WORLD);
-            
-            MPI_Barrier(MPI_COMM_WORLD);
-            swapSubGeneration(subCurrentGeneration, subNextGeneration);
-            
+            //send pieces
         }
     }
     
 
     delete[] subCurrentGeneration;
     delete[] newGeneration;
+
+    MPI_Type_free(&contiguous);
 
 
 

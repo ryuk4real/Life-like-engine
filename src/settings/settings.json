@@ -1,11 +1,11 @@
 {
     "isFirstGenerationRandom": 0,
-    "numberOfGenerations": 10000000,
+    "numberOfGenerations": 2,
     "displayGenerationsOnScreen": 0,
     "generationTextColor": [255,0,0],
     "generationTypefaceSize": 18,
     "displaySize": 500,
-    "matrixSize": 500,
+    "matrixSize": 6,
     "aliveCellColor": [0,0,0],
     "deadCellColor": [255,255,255],
     "millisecondsToWaitForEachGeneration": 0,
