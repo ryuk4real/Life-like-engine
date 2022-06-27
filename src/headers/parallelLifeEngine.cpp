@@ -4,11 +4,6 @@
 
 #include "utils.cpp"
 
-
-
-#define ALIVE   1
-#define DEAD    0
-
 MPI_Request request;
 MPI_Status status;
 
@@ -18,20 +13,50 @@ using namespace std;
 int processId;
 int numberOfCpus;
 
+int rows;
+int columns;
+int subRows;
+
 
 inline void sendBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down)
 {
-    MPI_Isend(subCurrentGeneration + settings.getMatrixSize(), 1, contiguous, up, 88, MPI_COMM_WORLD, &request);
-    MPI_Isend(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus), 1, contiguous, down, 99, MPI_COMM_WORLD, &request);
+    MPI_Isend(subCurrentGeneration + settings.getMatrixSize(),
+              1,
+              contiguous,
+              up,
+              88,
+              MPI_COMM_WORLD,
+              &request);
+
+    MPI_Isend(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus),
+              1,
+              contiguous,
+              down,
+              99,
+              MPI_COMM_WORLD,
+              &request);
 }
 
 inline void reciveBorders(int * subCurrentGeneration, MPI_Datatype contiguous, int &up, int &down)
 {
-    MPI_Recv(subCurrentGeneration, 1, contiguous, up, 99, MPI_COMM_WORLD, &status);
-    MPI_Recv(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus + 1), 1, contiguous, down, 88, MPI_COMM_WORLD, &status);
+    MPI_Recv(subCurrentGeneration,
+             1,
+             contiguous,
+             up,
+             99,
+             MPI_COMM_WORLD,
+             &status);
+
+    MPI_Recv(subCurrentGeneration + settings.getMatrixSize() * (settings.getMatrixSize() / numberOfCpus + 1),
+             1,
+             contiguous,
+             down,
+             88,
+             MPI_COMM_WORLD,
+             &status);
 }
 
-inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, int * subNextGeneration)
+inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, int * subNewGeneration)
 {
     int neighbours = 0;
 
@@ -53,22 +78,22 @@ inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, in
         {
             if (settings.getStringRule().getNeighbourFromBornSubsetAt(neighbours))
             {
-                subNextGeneration[m(i, j)] = ALIVE;
+                subNewGeneration[m(i, j)] = ALIVE;
             }
             else
             {
-                subNextGeneration[m(i, j)] = DEAD;
+                subNewGeneration[m(i, j)] = DEAD;
             }
         }
         else
         {
             if (settings.getStringRule().getNeighbourFromSurvivorSubsetAt(neighbours))
             {
-                subNextGeneration[m(i, j)] = ALIVE;
+                subNewGeneration[m(i, j)] = ALIVE;
             }
             else
             {
-                subNextGeneration[m(i, j)] = DEAD;
+                subNewGeneration[m(i, j)] = DEAD;
             }
         }
     }
@@ -77,32 +102,32 @@ inline void parallelTransictionCell(int i, int j, int * subCurrentGeneration, in
 
 
 
-void calculateNextSubInnerGeneration(int &subRows, int &columns, int * subCurrentGeneration, int * subNextGeneration)
+void calculateNextSubInnerGeneration(int * subCurrentGeneration, int * subNewGeneration)
 {
-    for (int i = 2; i < subRows - 1; ++i)
+    for (int i = 1; i < subRows - 2; ++i)
     {
         for (int j = 0; j < columns; ++j)
         {
-            parallelTransictionCell(i,j, subCurrentGeneration, subNextGeneration);
+            parallelTransictionCell(i,j, subCurrentGeneration, subNewGeneration);
         }
     }
 }
 
-inline void calculateNexSubGenerationBorders(int &subRows, int &columns, int * subCurrentGeneration, int * subNextGeneration)
+inline void calculateNexSubGenerationBorders(int * subCurrentGeneration, int * subNewGeneration)
 {
     for (int j = 0; j < columns; ++j)
     {
-        parallelTransictionCell(1, j, subCurrentGeneration, subNextGeneration);
-        parallelTransictionCell(subRows-1, j, subCurrentGeneration, subNextGeneration);
+        parallelTransictionCell(1, j, subCurrentGeneration, subNewGeneration);
+        parallelTransictionCell(subRows-2, j, subCurrentGeneration, subNewGeneration);
     }
 }
 
 
-inline void swapSubGeneration(int * subCurrentGeneration, int * subNextGeneration)
+inline void swapSubGeneration(int * subCurrentGeneration, int * subNewGeneration)
 {
     int *subCurrentGenerationCopy = subCurrentGeneration;
-    subCurrentGeneration = subNextGeneration;
-    subNextGeneration = subCurrentGenerationCopy;
+    subCurrentGeneration = subNewGeneration;
+    subNewGeneration = subCurrentGenerationCopy;
 }
 
 
@@ -112,16 +137,17 @@ inline void displayCurrentGeneration(int * generationAfterGather, ALLEGRO_COLOR 
     {
         for (int j = 0; j < settings.getMatrixSize(); ++j)
         {
-            drawCell(i, j, aliveCellColor);
+            if (generationAfterGather[m(j,i)] == 1)
+                drawCell(i, j, aliveCellColor);
         }
     }
 }
 
-void printm(int * mat, int proccessId, int rows, int cols)
+void printm(int * mat, int proccessId, int _subRows)
 {
     printf("Process %d\n", proccessId);
 
-    for (int i = 0; i < rows; ++i)
+    for (int i = 0; i < _subRows; ++i)
     {
         for (int j = 0; j < columns; ++j)
         {
@@ -143,9 +169,11 @@ int parallelLifeEngine()
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfCpus);
 
+    rows = settings.getMatrixSize();
+    subRows = ((settings.getMatrixSize() / numberOfCpus) + 2);
+    columns = settings.getMatrixSize();
 
-    int subRows = ((settings.getMatrixSize() / numberOfCpus) + 2);
-    int columns = settings.getMatrixSize();
+    int * generationAfterGather = new int[rows * columns];
 
     int dimensions[2] = {1, numberOfCpus};
 
@@ -167,23 +195,22 @@ int parallelLifeEngine()
 
 
     int * subCurrentGeneration = new int[subRows * columns];
-    int * subNextGeneration = new int[subRows * columns];
+    int * subNewGeneration = new int[subRows * columns];
 
 
     if (settings.isFirstGenerationRandomized())
-            initializeRandomizedFirstGeneration(subRows, columns, subCurrentGeneration);
+        initializeRandomizedFirstGeneration(subRows, columns, subCurrentGeneration, (unsigned int) processId);
     else
-        initializeFirstGenerationForTesting(subRows, columns, subCurrentGeneration);
+        initializeFirstGenerationForTesting(subRows, columns, subCurrentGeneration, processId);
+
+    if (processId == 0)
+    {
+        for (int i = 0; i < 3; ++i) subCurrentGeneration[m(0,i)] = 1;
+    }
     
 
     if (processId == 0)
     {
-        for (int j = 0; j < settings.getMatrixSize(); ++j)
-        {
-            subCurrentGeneration[m(1, j)] = 4;
-            subCurrentGeneration[m(subRows - 2, j)] = 5;
-        }
-
         #ifdef USE_ALLEGRO_GRAPHICS
         // ALLEGRO -------------------------------------------------------
         // Initialize allegro
@@ -209,10 +236,10 @@ int parallelLifeEngine()
         al_init_ttf_addon();
 
         rgb aliveCellColorRGB = settings.getDeadCellColor();
-        aliveCellColor = al_map_rgb(aliveCellColor.r, aliveCellColor.g, aliveCellColor.b);
+        ALLEGRO_COLOR aliveCellColor = al_map_rgb(aliveCellColor.r, aliveCellColor.g, aliveCellColor.b);
 
         rgb deadCellColorRGB = settings.getDeadCellColor();
-        deadCellColor = al_map_rgb(deadCellColorRGB.r, deadCellColorRGB.g, deadCellColorRGB.b);
+        ALLEGRO_COLOR deadCellColor = al_map_rgb(deadCellColorRGB.r, deadCellColorRGB.g, deadCellColorRGB.b);
 
         ALLEGRO_FONT *fontUbuntuB;
         rgb textRGB;
@@ -230,25 +257,29 @@ int parallelLifeEngine()
         // ---------------------------------------------------------------
         #endif // USE_ALLEGRO_GRAPHICS
 
-
-        int * generationAfterGather = new int[rows * columns];
-        initializeFirstGenerationForTesting(rows, columns, generationAfterGather);
-
-
         double startTime = MPI_Wtime();
 
-        for (int i = 0; i < columns; ++i)
-        {
-            subCurrentGeneration[m(0,i)] = i;
-        }
 
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
         {
             sendBorders(subCurrentGeneration, contiguous, up, down);
+            calculateNextSubInnerGeneration(subCurrentGeneration, subNewGeneration);
             reciveBorders(subCurrentGeneration, contiguous, up, down);
-            printm(subCurrentGeneration, processId, subRows, columns);
+            calculateNexSubGenerationBorders(subCurrentGeneration, subNewGeneration);
 
-            //gather all pieces
+            MPI_Gather(subNewGeneration + columns,
+                        subRows - 2,
+                        contiguous,
+                        generationAfterGather,
+                        subRows - 2,
+                        contiguous,
+                        0,
+                        MPI_COMM_WORLD);
+            
+            int *subCurrentGenerationCopy = subCurrentGeneration;
+            subCurrentGeneration = subNewGeneration;
+            subNewGeneration = subCurrentGenerationCopy;
+            
 
             #ifdef USE_ALLEGRO_GRAPHICS
             displayCurrentGeneration(generationAfterGather, aliveCellColor);
@@ -262,9 +293,7 @@ int parallelLifeEngine()
 
             std::this_thread::sleep_for(std::chrono::milliseconds(settings.getMillisecodsToWaitForEachGeneration()));
 
-            printm(generationAfterGather, processId, rows, columns);
-
-            printf("--%d--\n", i);
+            MPI_Barrier(MPI_COMM_WORLD);
         }
 
 
@@ -278,24 +307,39 @@ int parallelLifeEngine()
         #ifdef USE_ALLEGRO_GRAPHICS
         al_destroy_display(display);
         #endif
-    
-    }
 
-    if (processId != 0)
+    }
+    else
     {
+
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
         {
             sendBorders(subCurrentGeneration, contiguous, up, down);
+            calculateNextSubInnerGeneration(subCurrentGeneration, subNewGeneration);
             reciveBorders(subCurrentGeneration, contiguous, up, down);
-            printm(subCurrentGeneration, processId, subRows, columns);
+            calculateNexSubGenerationBorders(subCurrentGeneration, subNewGeneration);
 
-            //send pieces
+            MPI_Gather(subNewGeneration + columns,
+                        subRows - 2,
+                        contiguous,
+                        generationAfterGather,
+                        subRows - 2,
+                        contiguous,
+                        0,
+                        MPI_COMM_WORLD);
+            
+            int *subCurrentGenerationCopy = subCurrentGeneration;
+            subCurrentGeneration = subNewGeneration;
+            subNewGeneration = subCurrentGenerationCopy;
+            
+            MPI_Barrier(MPI_COMM_WORLD);
         }
     }
     
 
     delete[] subCurrentGeneration;
-    delete[] newGeneration;
+    delete[] subNewGeneration;
+    delete[] generationAfterGather;
 
     MPI_Type_free(&contiguous);
 
