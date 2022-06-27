@@ -1,14 +1,19 @@
-#ifndef SETTINGS_INSTANCE
-#define SETTINGS_INSTANCE
+#ifndef UTILS
+#define UTILS
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_ttf.h>
 
+#include <random>
+#include <thread> //sleep_for
+#include <chrono> //milliseconds
+
 #include "Settings.hpp"
 
-//#define USE_ALLEGRO_GRAPHICS
+#define ALIVE   1
+#define DEAD    0
 
 Settings settings;
 
@@ -19,29 +24,39 @@ inline int m(int i, int j)
 }
 
 
-void initializeFirstGenerationForTesting(int &_rows, int &_columns, int * currentGeneration)
+void initializeFirstGenerationForTesting(int _rows, int _columns, int * subCurrentGeneration, int processId)
 {
     for (int i = 0; i < _rows; ++i)
     {
         for (int j = 0; j < _columns; ++j)
         {
             if ((j + i) % 5 == 0)
-                currentGeneration[m(i, j)] = 1;
+                subCurrentGeneration[m(i, j)] = 1;
             else
-                currentGeneration[m(i,j)] = 0;
+                subCurrentGeneration[m(i,j)] = 0;
         }
     }
 
-    //currentGeneration[m(_rows / 2, _columns / 2)] = 1;
-    //currentGeneration[m(_rows / 2 + 1, _columns / 2 + 1)] = 1;
+    #if defined(PARALLEL)
+    if (processId == 0)
+    {
+        for (int i = 0; i < 3; ++i) subCurrentGeneration[m(1,i)] = 1;
+    }
+    #endif
+    
+    #if defined(SERIAL)
+    if (processId == 0)
+    {
+        for (int i = 0; i < 3; ++i) subCurrentGeneration[m(0,i)] = 1;
+    }
+    #endif
 
 
 }
 
 
-void initializeRandomizedFirstGeneration(int &_rows, int &_columns, int * currentGeneration)
+void initializeRandomizedFirstGeneration(int &_rows, int &_columns, int * currentGeneration, unsigned int seed)
 {
-    unsigned int seed = time(nullptr);
 
     for (int i = 0; i < _rows; ++i)
     {
@@ -50,15 +65,39 @@ void initializeRandomizedFirstGeneration(int &_rows, int &_columns, int * curren
             currentGeneration[m(i, j)] = rand_r(&seed) % 2;
         }
     }
+
+    //just a slider
+    /* if (seed==0)
+    {
+        int ii = 3;
+        int jj = 10;
+        currentGeneration[m(ii-1,jj)]=1;
+        currentGeneration[m(ii,jj+1)]=1;
+        currentGeneration[m(ii+1,jj-1)]=1;
+        currentGeneration[m(ii+1,jj)]=1;
+        currentGeneration[m(ii+1,jj+1)]=1;
+    } */
 }
 
 void drawCell(int i, int j, ALLEGRO_COLOR cellColor)
 {
-    al_draw_filled_rectangle(i * settings.getDisplaySize() / settings.getMatrixSize(),
-                             j * settings.getDisplaySize() / settings.getMatrixSize(),
-                             i * settings.getDisplaySize() / settings.getMatrixSize() + settings.getDisplaySize() / settings.getMatrixSize(),
-                             j * settings.getDisplaySize() / settings.getMatrixSize() + settings.getDisplaySize() / settings.getMatrixSize(),
+    double squareSize = (double )settings.getDisplaySize() / (double) settings.getMatrixSize();
+
+    al_draw_filled_rectangle(i * squareSize,
+                             j * squareSize,
+                             i * squareSize + squareSize,
+                             j * squareSize + squareSize,
                              cellColor);
 }
 
-#endif
+void displayGenerationText(ALLEGRO_FONT *font, ALLEGRO_COLOR textColor, int &i)
+{
+    if (settings.areGenerationsDisplayedOnScreen())
+    {
+        // Print the number of generations on screen
+        string generation = to_string(i);
+        al_draw_text(font, textColor, 10, 10, ALLEGRO_ALIGN_LEFT, generation.c_str());
+    }
+}
+
+#endif //UTILS
