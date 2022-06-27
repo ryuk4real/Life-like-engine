@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mpirun -np 1 ./main
+mpirun -np 6 ./main
