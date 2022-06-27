@@ -3,22 +3,18 @@
 
 #include "utils.cpp"
 
-
-#define ALIVE   1
-#define DEAD    0
-
 using namespace std;
 
 int rows = settings.getMatrixSize();
 int columns = settings.getMatrixSize();
 
-double squareHeight = (double) settings.getDisplaySize() / (double) settings.getMatrixSize();
-
 int *currentGeneration;
 int *newGeneration;
 
+#ifdef USE_ALLEGRO_GRAPHICS
 ALLEGRO_COLOR deadCellColor;
 ALLEGRO_COLOR aliveCellColor;
+#endif
 
 
 void swapLastGeneration()
@@ -93,20 +89,6 @@ void generateNextGeneration()
     }
 }
 
-
-
-
-void displayGenerationText(ALLEGRO_FONT *font, ALLEGRO_COLOR textColor, int &i)
-{
-    if (settings.areGenerationsDisplayedOnScreen())
-    {
-        // Print the number of generations on screen
-        string generation = to_string(i);
-        al_draw_text(font, textColor, 10, 10, ALLEGRO_ALIGN_LEFT, generation.c_str());
-    }
-}
-
-
 int serialLifeEngine()
 {
     // SEQUENTIAL ALGORITHM
@@ -161,11 +143,11 @@ int serialLifeEngine()
         #endif // USE_ALLEGRO_GRAPHICS
 
         if (settings.isFirstGenerationRandomized())
-            initializeRandomizedFirstGeneration(rows, columns, currentGeneration);
+            initializeRandomizedFirstGeneration(rows, columns, currentGeneration, 0);
         else
-            initializeFirstGenerationForTesting(rows, columns, currentGeneration);
+            initializeFirstGenerationForTesting(rows, columns, currentGeneration, 0);
 
-        double startTime = MPI_Wtime();
+        auto startTime = std::chrono::system_clock::now();
 
         // Game Loop -----------------------------------------------------
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
@@ -190,13 +172,14 @@ int serialLifeEngine()
         al_destroy_display(display);
         #endif
 
-        double endTime = MPI_Wtime();
+        auto endTime = std::chrono::system_clock::now();
+        std::chrono::duration<double> diff = endTime - startTime;
 
         delete[] currentGeneration;
         delete[] newGeneration;
 
         //implement write on file
-        printf("Elapsed time: %.3f\n", endTime - startTime);
+        printf("Elapsed time: %.3f\n", diff);
 
         return 0;
 }
