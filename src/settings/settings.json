@@ -1,13 +1,23 @@
 {
     "isFirstGenerationRandom": 0,
-    "numberOfGenerations": 1000,
-    "displayGenerationsOnScreen": 1,
+
+    "numberOfGenerations": 500,
+
+    "displayGenerationsOnScreen": 0,
+
     "generationTextColor": [255,0,0],
+
     "generationTypefaceSize": 18,
+
     "displaySize": 600,
-    "matrixSize": 300,
+
+    "matrixSize": 600,
+
     "aliveCellColor": [0,0,0],
+    
     "deadCellColor": [255,255,255],
+
     "millisecondsToWaitForEachGeneration": 0,
+
     "stringRule": "B23/S3"
 }

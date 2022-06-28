@@ -1,7 +1,9 @@
-#ifndef SERIAL_LIFE_ENGINE
-#define SERIAL_LIFE_ENGINE
+#ifndef SERIAL_LIFE_ENGINE_HPP
+#define SERIAL_LIFE_ENGINE_HPP
 
-#include "utils.cpp"
+#include <mpi.h>
+
+#include "utils.hpp"
 
 using namespace std;
 
@@ -89,6 +91,29 @@ void generateNextGeneration()
     }
 }
 
+void initializeFirstGenerationForTesting(int _rows, int _columns, int * subCurrentGeneration, int processId)
+{
+    //horizontal lines
+    for (int i = 1; i < _rows - 1; ++i)
+    {
+        for (int j = 0; j < _columns; ++j)
+        {
+            if (i / 3 != 0)
+                subCurrentGeneration[m(i,j)] = 1;
+            else
+                subCurrentGeneration[m(i,j)] = 0;
+        }
+    }
+
+    // a square of dead cells to trigger the automata on the corner
+    if (processId == 0)
+    {
+        for (int i = 0; i < 5; ++i)
+            for(int j = 0; j < 5; ++j)
+                subCurrentGeneration[m(i,j)] = 0;
+    }
+}
+
 int serialLifeEngine()
 {
     // SEQUENTIAL ALGORITHM
@@ -147,7 +172,7 @@ int serialLifeEngine()
         else
             initializeFirstGenerationForTesting(rows, columns, currentGeneration, 0);
 
-        auto startTime = std::chrono::system_clock::now();
+        double startTime = MPI_Wtime();
 
         // Game Loop -----------------------------------------------------
         for (int i = 0; i < settings.getNumberOfGenerations(); ++i)
@@ -172,14 +197,15 @@ int serialLifeEngine()
         al_destroy_display(display);
         #endif
 
-        auto endTime = std::chrono::system_clock::now();
-        std::chrono::duration<double> diff = endTime - startTime;
+        double endTime = MPI_Wtime();
+
+
+        //implement write on file
+        printf("%.3f", endTime - startTime);
 
         delete[] currentGeneration;
         delete[] newGeneration;
 
-        //implement write on file
-        printf("Elapsed time: %.3f\n", diff);
 
         return 0;
 }

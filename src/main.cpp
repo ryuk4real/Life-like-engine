@@ -1,55 +1,35 @@
 #include <mpi.h>
 
+//#define USE_ALLEGRO_GRAPHICS
+
 #define PARALLEL
 //#define SERIAL
 
-// TODO: change parallel and serial to main
+#if defined (PARALLEL)
+#include "headers/parallelLifeEngine.hpp"
+#endif
 
-#define USE_ALLEGRO_GRAPHICS
-
-#if defined(PARALLEL)
-
-#include "headers/parallelLifeEngine.cpp"
-
-int main(int args, char **argv)
-{
-
-    MPI_Init(&args, &argv);
-
-
-    int numberOfCpus;
-    MPI_Comm_size(MPI_COMM_WORLD, &numberOfCpus);
-
-
-    int errorCode;
-
-    errorCode = parallelLifeEngine();
-
-    MPI_Finalize();
-    return errorCode;
-}
-
+#if defined (SERIAL)
+#include "headers/serialLifeEngine.hpp"
 #endif
 
 
-#ifdef SERIAL
 
-#include "headers/serialLifeEngine.cpp"
 int main(int args, char **argv)
 {
-
     MPI_Init(&args, &argv);
-
-
-    int numberOfCpus;
-    MPI_Comm_size(MPI_COMM_WORLD, &numberOfCpus);
 
     int errorCode;
 
+    #if defined (SERIAL)
     errorCode = serialLifeEngine();
+    #endif
+
+    #if defined (PARALLEL)
+    errorCode = parallelLifeEngine();
+    #endif
+
 
     MPI_Finalize();
     return errorCode;
 }
-
-#endif
