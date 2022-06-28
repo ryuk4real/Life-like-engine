@@ -32,6 +32,11 @@ class StringRule
 StringRule::StringRule(string &_stringRule)
 {
     
+    /*
+        This ragex checks a B followed by 8 different digits, a backslash, an S and
+            again 8 digits
+    */
+
     const regex ruleDetection("^B((?![0-8]*?([0-8])[0-8]*?\\2)[0-8]{0,10})\\/S((?![0-8]*?([0-8])[0-8]*?\\4)[0-8]{0,10})");
     smatch matches;
     
@@ -59,7 +64,6 @@ StringRule::StringRule(string &_stringRule)
 
         cout<<endl;
     }
-    
     else throw runtime_error("ERROR: can't parse stringRule in file settings.json");
 }
 

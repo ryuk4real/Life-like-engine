@@ -1,5 +1,5 @@
-#ifndef UTILS
-#define UTILS
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
@@ -17,45 +17,13 @@
 
 Settings settings;
 
-
 inline int m(int i, int j)
 {
     return ((i * settings.getMatrixSize()) + j);
 }
 
 
-void initializeFirstGenerationForTesting(int _rows, int _columns, int * subCurrentGeneration, int processId)
-{
-    for (int i = 0; i < _rows; ++i)
-    {
-        for (int j = 0; j < _columns; ++j)
-        {
-            if ((j + i) % 5 == 0)
-                subCurrentGeneration[m(i, j)] = 1;
-            else
-                subCurrentGeneration[m(i,j)] = 0;
-        }
-    }
-
-    #if defined(PARALLEL)
-    if (processId == 0)
-    {
-        for (int i = 0; i < 3; ++i) subCurrentGeneration[m(1,i)] = 1;
-    }
-    #endif
-    
-    #if defined(SERIAL)
-    if (processId == 0)
-    {
-        for (int i = 0; i < 3; ++i) subCurrentGeneration[m(0,i)] = 1;
-    }
-    #endif
-
-
-}
-
-
-void initializeRandomizedFirstGeneration(int &_rows, int &_columns, int * currentGeneration, unsigned int seed)
+void initializeRandomizedFirstGeneration(int _rows, int _columns, int * currentGeneration, unsigned int seed)
 {
 
     for (int i = 0; i < _rows; ++i)

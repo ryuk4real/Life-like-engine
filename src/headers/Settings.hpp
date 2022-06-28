@@ -40,6 +40,7 @@ class Settings
         Settings();
 
         // Getters -------------------------------------------------------------------------------------
+
         bool isFirstGenerationRandomized() const {return this->randomizedFirstGeneration;}
 
         int getNumberOfGenerations() const {return this->numberOfGenerations;}
